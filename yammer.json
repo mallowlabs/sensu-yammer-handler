@@ -1,0 +1,9 @@
+{
+  "yammer": {
+    "og_url": "http://localhost:8080/",
+    "og_title": "Sensu",
+    "og_image": "http://sensuapp.org/img/sensu_logo_large-c92d73db.png",
+    "access_token": "YOUR_YAMMER_ACCESS_TOKEN",
+    "group_id" : "YOUR_FEED_ID"
+  }
+}
