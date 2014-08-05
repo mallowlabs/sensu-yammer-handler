@@ -30,12 +30,24 @@ Example yammer.sjon
       }
     }
 
+If you want to use yammer handler as a default handler.
+You can use Sensu handler sets.
+Put below file to ```/etc/sensu/conf.d/handlers/default.json
+
+    {
+      "handlers": {
+        "default": {
+          "type": "set",
+          "handlers": ["yammer"]
+        }
+      }
+    }
+
 ### How to get Yammer group_id
 
 1. Access to target Yammer Group.
 2. Check the URL. Extract ```feedId=xxxxx```
 3. xxxxx is your group_id.
-
 
 ### How to get Yammer access_token
 
