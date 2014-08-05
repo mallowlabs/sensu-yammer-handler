@@ -43,7 +43,7 @@ Look https://github.com/yammer/yam#configuration
 
 ## Licence
 
-[MIT](https://github.com/mallowlabs/sensu-yammer-handler/blob/master/LICENCE)
+[MIT](https://github.com/mallowlabs/sensu-yammer-handler/blob/master/LICENSE)
 
 ## Author
 
