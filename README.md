@@ -15,33 +15,37 @@ A [Sensu](http://sensuapp.org/) handler for [Yammer](https://www.yammer.com/).
 
 Example yammer.sjon
 
-    {
-      "handlers": {
-        "yammer": {
-          "type": "pipe",
-          "command": "/etc/sensu/handlers/yammer.rb"
-        }
-      },
-      "yammer": {
-        "og_url": "http://localhost:3000/",
-        "og_title": "Sensu",
-        "access_token": "YOUR_YAMMER_ACCESS_KEY",
-        "group_id" : "123456"
-      }
+```json
+{
+  "handlers": {
+    "yammer": {
+      "type": "pipe",
+      "command": "/etc/sensu/handlers/yammer.rb"
     }
+  },
+  "yammer": {
+    "og_url": "http://localhost:3000/",
+    "og_title": "Sensu",
+    "access_token": "YOUR_YAMMER_ACCESS_KEY",
+    "group_id" : "123456"
+  }
+}
+```
 
 If you want to use yammer handler as a default handler.
 You can use Sensu handler sets.
 Put below file to ```/etc/sensu/conf.d/handlers/default.json
 
-    {
-      "handlers": {
-        "default": {
-          "type": "set",
-          "handlers": ["yammer"]
-        }
-      }
+```json
+{
+  "handlers": {
+    "default": {
+      "type": "set",
+      "handlers": ["yammer"]
     }
+  }
+}
+```
 
 ### How to get Yammer group_id
 
