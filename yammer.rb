@@ -3,6 +3,7 @@
 require 'rubygems' if RUBY_VERSION < '1.9.0'
 require 'sensu-handler'
 require 'timeout'
+require 'sensu/redis'
 
 class Yammer < Sensu::Handler
   def handle
@@ -12,6 +13,54 @@ class Yammer < Sensu::Handler
     access_token = settings['yammer']['access_token']
     group_id     = settings['yammer']['group_id']
 
+    begin
+      redis = Redis.connect(settings[:redis])
+
+      key = ['sensu-yammer-handler', @event['client']['name'], @event['check']['name']].join(':')
+
+      message_id = redis.get(key)
+
+      message_id = post_to_yammer(og_url, og_title, og_image, access_token, group_id, message_id)
+
+      resolve? ? redis.del(key) : redis.set(key, message_id)
+    ensure
+      redis.unbind if redis
+    end
+  end
+
+  private
+
+  def post_to_yammer(og_url, og_title, og_image, access_token, group_id, replied_to_id)
+    message_id = nil
+    begin
+      timeout 10 do
+        https = Net::HTTP.new("www.yammer.com", 443)
+        https.use_ssl = true
+        res = https.start do |conn|
+          conn.post("/api/v1/messages.json", URI.encode_www_form({
+            :group_id => group_id,
+            :og_url => og_url,
+            :og_title => og_title,
+            :og_image => og_image,
+            :replied_to_id => replied_to_id,
+            :body => make_body
+          }), {'Authorization' => "Bearer #{access_token}"})
+        end
+
+        if res.is_a? Net::HTTPSuccess
+          message = MultiJson.parse(res.body)
+          message_id = message['id']
+        end
+
+        puts 'yammer -- sent alert for ' + short_name + ' to ' + group_id
+      end
+    rescue Timeout::Error
+      puts 'yammer -- timed out while attempting to ' + @event['action'] + ' an incident -- ' + short_name
+    end
+    message_id
+  end
+
+  def make_body
     playbook = "Playbook:  #{@event['check']['playbook']}" if @event['check']['playbook']
     body = <<-BODY.gsub(/^\s+/, '')
             #{action_to_string} - #{short_name}: #{status_to_string}
@@ -23,36 +72,19 @@ class Yammer < Sensu::Handler
             #{playbook}
             #{@event['check']['output']}
           BODY
-
-
-    begin
-      timeout 10 do
-        https = Net::HTTP.new("www.yammer.com", 443)
-        https.use_ssl = true
-        https.start do |conn|
-          conn.post("/api/v1/messages.json", URI.encode_www_form({
-            :group_id => group_id,
-            :og_url => og_url,
-            :og_title => og_title,
-            :og_image => og_image,
-            :body => body
-          }), {'Authorization' => "Bearer #{access_token}"})
-        end
-
-        puts 'yammer -- sent alert for ' + short_name + ' to ' + group_id
-      end
-    rescue Timeout::Error
-      puts 'yammer -- timed out while attempting to ' + @event['action'] + ' an incident -- ' + short_name
-    end
+    body
   end
 
-  private
   def short_name
     @event['client']['name'] + ' / ' + @event['check']['name']
   end
 
+  def resolve?
+    @event['action'].eql?('resolve')
+  end
+
   def action_to_string
-    @event['action'].eql?('resolve') ? "[RESOLVED]" : "[ALERT]"
+    resolve? ? "[RESOLVED]" : "[ALERT]"
   end
 
   def status_to_string
