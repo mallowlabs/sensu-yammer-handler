@@ -3,7 +3,8 @@
 require 'rubygems' if RUBY_VERSION < '1.9.0'
 require 'sensu-handler'
 require 'timeout'
-require 'sensu/redis'
+require 'redis'
+require 'multi_json'
 
 class Yammer < Sensu::Handler
   def handle
@@ -14,7 +15,7 @@ class Yammer < Sensu::Handler
     group_id     = settings['yammer']['group_id']
 
     begin
-      redis = Redis.connect(settings[:redis])
+      redis = ::Redis.new(symbolize_keys(settings['redis']))
 
       key = ['sensu-yammer-handler', @event['client']['name'], @event['check']['name']].join(':')
 
@@ -24,11 +25,15 @@ class Yammer < Sensu::Handler
 
       resolve? ? redis.del(key) : redis.set(key, message_id)
     ensure
-      redis.unbind if redis
+      redis.quit if redis
     end
   end
 
   private
+
+  def symbolize_keys(hash)
+    ::MultiJson.load(::MultiJson.dump(hash.dup), :symbolize_keys => true)
+  end
 
   def post_to_yammer(og_url, og_title, og_image, access_token, group_id, replied_to_id)
     message_id = nil
@@ -48,8 +53,8 @@ class Yammer < Sensu::Handler
         end
 
         if res.is_a? Net::HTTPSuccess
-          message = MultiJson.parse(res.body)
-          message_id = message['id']
+          messages = ::MultiJson.load(res.body)['messages']
+          message_id = messages[0]['id']
         end
 
         puts 'yammer -- sent alert for ' + short_name + ' to ' + group_id
