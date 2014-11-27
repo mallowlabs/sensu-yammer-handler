@@ -9,9 +9,10 @@ A [Sensu](http://sensuapp.org/) handler for [Yammer](https://www.yammer.com/).
 
 ## Install
 
-1. Put ```yammer.rb``` to /etc/sensu/handlers/yammer.rb
-2. Put ```yammer.json``` to /etc/sensu/conf.d/handlers/yammer.json
-3. Edit yammer.json
+1. ```/opt/sensu/embedded/bin/gem install redis```
+2. Put ```yammer.rb``` to /etc/sensu/handlers/yammer.rb
+3. Put ```yammer.json``` to /etc/sensu/conf.d/handlers/yammer.json
+4. Edit yammer.json
 
 Example yammer.sjon
 
